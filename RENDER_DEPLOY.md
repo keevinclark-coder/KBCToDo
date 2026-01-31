@@ -1,5 +1,15 @@
 # Deploy KBCToDo to Render
 
+## Set RENDER_API_KEY (for API/script)
+
+To create the service via API or use the script:
+
+1. Get your API key: [Render Dashboard → Account → API Keys](https://dashboard.render.com/settings/api-keys).
+2. Set it in your environment (use the **full** key; short values like `rnd_ANUc25` often return 401):
+   - **Option A:** In terminal: `export RENDER_API_KEY=your_full_key`
+   - **Option B:** Create a `.env` file in the KBCToDo root with: `RENDER_API_KEY=your_full_key` (the script will source it; `.env` is in `.gitignore`).
+3. Run: `./scripts/render-create-static-site.sh`
+
 ## 1. Create the service in the Render Dashboard
 
 **Option A – Blueprint (recommended)**
