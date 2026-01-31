@@ -1,12 +1,13 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { TodoList } from './TodoList'
 import { TodoInput } from './TodoInput'
 import type { Todo } from './types'
+import * as api from './api'
 import './App.css'
 
 const STORAGE_KEY = 'kbctodo-todos'
 
-function loadTodos(): Todo[] {
+function loadTodosFromStorage(): Todo[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return []
@@ -25,49 +26,93 @@ function loadTodos(): Todo[] {
   }
 }
 
-function saveTodos(todos: Todo[]) {
+function saveTodosToStorage(todos: Todo[]) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(todos))
 }
 
 export default function App() {
-  const [todos, setTodos] = useState<Todo[]>(loadTodos)
+  const [todos, setTodos] = useState<Todo[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const useBackend = api.useApi()
 
-  const persist = useCallback((next: Todo[]) => {
-    setTodos(next)
-    saveTodos(next)
-  }, [])
+  useEffect(() => {
+    if (useBackend) {
+      api.fetchTodos().then(setTodos).catch((e) => setError(String(e))).finally(() => setLoading(false))
+    } else {
+      setTodos(loadTodosFromStorage())
+      setLoading(false)
+    }
+  }, [useBackend])
+
+  const persist = useCallback(
+    (next: Todo[]) => {
+      setTodos(next)
+      if (!useBackend) saveTodosToStorage(next)
+    },
+    [useBackend]
+  )
 
   const addTodo = useCallback(
-    (text: string) => {
+    async (text: string) => {
       const trimmed = text.trim()
       if (!trimmed) return
-      const newTodo: Todo = {
-        id: crypto.randomUUID(),
-        text: trimmed,
-        done: false,
+      if (useBackend) {
+        try {
+          const todo = await api.createTodo(trimmed)
+          setTodos((prev) => [...prev, todo])
+        } catch (e) {
+          setError(String(e))
+        }
+      } else {
+        const newTodo: Todo = { id: crypto.randomUUID(), text: trimmed, done: false }
+        persist([...todos, newTodo])
       }
-      persist([...todos, newTodo])
     },
-    [todos, persist]
+    [useBackend, todos, persist]
   )
 
   const toggleTodo = useCallback(
-    (id: string) => {
-      persist(
-        todos.map((t) =>
-          t.id === id ? { ...t, done: !t.done } : t
-        )
-      )
+    async (id: string) => {
+      const t = todos.find((x) => x.id === id)
+      if (!t) return
+      if (useBackend) {
+        try {
+          const updated = await api.updateTodo(id, { done: !t.done })
+          setTodos((prev) => prev.map((x) => (x.id === id ? updated : x)))
+        } catch (e) {
+          setError(String(e))
+        }
+      } else {
+        persist(todos.map((x) => (x.id === id ? { ...x, done: !x.done } : x)))
+      }
     },
-    [todos, persist]
+    [useBackend, todos, persist]
   )
 
   const deleteTodo = useCallback(
-    (id: string) => {
-      persist(todos.filter((t) => t.id !== id))
+    async (id: string) => {
+      if (useBackend) {
+        try {
+          await api.deleteTodo(id)
+          setTodos((prev) => prev.filter((x) => x.id !== id))
+        } catch (e) {
+          setError(String(e))
+        }
+      } else {
+        persist(todos.filter((t) => t.id !== id))
+      }
     },
-    [todos, persist]
+    [useBackend, todos, persist]
   )
+
+  if (loading) {
+    return (
+      <div className="app">
+        <p className="tagline">Loading…</p>
+      </div>
+    )
+  }
 
   return (
     <div className="app">
@@ -75,13 +120,14 @@ export default function App() {
         <h1>KBCToDo</h1>
         <p className="tagline">Keep track of what matters</p>
       </header>
+      {error && (
+        <p className="tagline" style={{ color: 'var(--danger)' }}>
+          {error}
+        </p>
+      )}
       <main className="app-main">
         <TodoInput onAdd={addTodo} />
-        <TodoList
-          todos={todos}
-          onToggle={toggleTodo}
-          onDelete={deleteTodo}
-        />
+        <TodoList todos={todos} onToggle={toggleTodo} onDelete={deleteTodo} />
       </main>
     </div>
   )

@@ -1,4 +1,26 @@
-# Deploy KBCToDo to Render
+# Deploy KBCToDo to Render (frontend + API + DB)
+
+## Deploy full stack via Blueprint (recommended)
+
+The repo includes a **render.yaml** that defines:
+
+- **kbctodo-db** – Postgres database (free, Oregon)
+- **KBCToDo-API** – Node.js API (Express + Prisma), connects to the DB
+- **KBCToDo** – Static site (frontend), uses API when `VITE_API_URL` is set
+
+**Steps:**
+
+1. Open [Render Dashboard](https://dashboard.render.com).
+2. **New** → **Blueprint**.
+3. Connect the repo **keevinclark-coder/KBCToDo**.
+4. Click **Apply**. Render will create the database, API, and frontend.
+5. After deploy, open the **KBCToDo** (frontend) service → **Environment**.
+6. Add **VITE_API_URL** = your KBCToDo-API URL (e.g. `https://kbctodo-api.onrender.com`).
+7. Trigger a **manual deploy** on the frontend so the new env is baked into the build.
+
+The frontend will then use the API and database; without `VITE_API_URL` it falls back to localStorage.
+
+---
 
 ## Set RENDER_API_KEY (for API/script)
 

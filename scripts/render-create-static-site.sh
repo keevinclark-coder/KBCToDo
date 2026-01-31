@@ -46,7 +46,20 @@ rm -f "$TMP"
 
 if [ "$HTTP_CODE" = "201" ]; then
   echo "Created KBCToDo static site on Render."
-  echo "$HTTP_BODY" | python3 -c "import json,sys; d=json.load(sys.stdin); print('Service ID:', d.get('service', d).get('id')); print('URL:', d.get('service', d).get('serviceDetails', {}).get('url', 'N/A'))" 2>/dev/null || echo "$HTTP_BODY"
+  SVC_ID=$(echo "$HTTP_BODY" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('service', d).get('id', ''))" 2>/dev/null)
+  echo "$HTTP_BODY" | python3 -c "import json,sys; d=json.load(sys.stdin); sd=d.get('service', d).get('serviceDetails', {}); print('Service ID:', d.get('service', d).get('id')); print('URL:', sd.get('url', 'N/A'))" 2>/dev/null || echo "$HTTP_BODY"
+  # Static site create often doesn't set buildCommand; PATCH to set serviceDetails
+  if [ -n "$SVC_ID" ]; then
+    TMP2=$(mktemp)
+    PATCH_CODE=$(curl -s -w "%{http_code}" -o "$TMP2" -X PATCH "https://api.render.com/v1/services/$SVC_ID" \
+      -H "Authorization: Bearer $RENDER_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d "{\"serviceDetails\":{\"buildCommand\":\"$BUILD_CMD\",\"publishPath\":\"$PUBLISH_PATH\"}}")
+    rm -f "$TMP2"
+    if [ "$PATCH_CODE" = "200" ]; then
+      echo "Set build command and publish path. Trigger a deploy from the Dashboard or: curl -X POST -H \"Authorization: Bearer \$RENDER_API_KEY\" https://api.render.com/v1/services/$SVC_ID/deploys"
+    fi
+  fi
 elif [ "$HTTP_CODE" = "401" ]; then
   echo "Error: Unauthorized. Check RENDER_API_KEY (get full key from https://dashboard.render.com/settings/api-keys)"
   echo "$HTTP_BODY"
