@@ -28,13 +28,17 @@ To create the service via API or use the script:
 5. Set **Publish directory:** `dist`
 6. Click **Create Static Site**.
 
-## 2. Get the service ID for monitoring
+## 2. Monitor deploys and logs (after render login)
 
-After the service is created, open it in the Dashboard. The URL is like:
+After the service is created and you’ve run `render login` to refresh the CLI token:
 
-`https://dashboard.render.com/static/srv-XXXXXXXXX`
+```bash
+./scripts/monitor-render.sh
+```
 
-The **service ID** is `srv-XXXXXXXXX`. Share this so deploys and logs can be checked via CLI.
+This finds the KBCToDo service, lists recent deploys, and shows build and service logs so you can correct any errors.
+
+To get the service ID manually: open the service in the Dashboard; the URL is like `https://dashboard.render.com/static/srv-XXXXXXXXX` — the ID is `srv-XXXXXXXXX`.
 
 ## 3. Repo status
 
