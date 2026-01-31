@@ -28,10 +28,10 @@ npm run preview
 This app is a **static site**. On [Render](https://render.com):
 
 1. **New** → **Blueprint** (this repo has a `render.yaml`)
-2. Connect your GitHub repo **KBCToDo**
+2. Connect your GitHub repo **kclark-wip/KBCToDo**
 3. Review and click **Apply**
 
-Or manually: **New** → **Static Site**, connect **KBCToDo**, build command `npm install && npm run build`, publish directory `dist`.
+Or manually: **New** → **Static Site**, connect **kclark-wip/KBCToDo**, build command `npm install && npm run build`, publish directory `dist`.
 
 ## Lint
 
