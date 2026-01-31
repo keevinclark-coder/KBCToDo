@@ -1,0 +1,7 @@
+# Render Blueprint: connect this repo in Render Dashboard → New → Blueprint
+services:
+  - type: web
+    name: KBCToDo
+    runtime: static
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
